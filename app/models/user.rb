@@ -1,8 +1,9 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :registerable, :recoverable, :rememberable, :trackable, :validatable
-  devise :omniauthable, :omniauth_providers => [:instagram]
+  devise :database_authenticatable, :registerable,
+  :recoverable, :rememberable, :trackable,
+  :omniauthable, :omniauth_providers => [:instagram, :twitter]
 
   has_many :maps, -> { order(:created_at) } 
   has_many :moments, through: :maps
@@ -10,7 +11,7 @@ class User < ActiveRecord::Base
   has_many :friends, :through => :friendships
   has_many :inverse_friendships, :class_name => "Friendship", :foreign_key => "friend_id"
   has_many :inverse_friends, :through => :inverse_friendships, :source => :user
-  has_many :authentications
+  has_many :identities
   has_many :activities
 
 
@@ -19,23 +20,20 @@ class User < ActiveRecord::Base
                     :default_url => "missing_avatar.jpg"
   validates_attachment_content_type :avatar, :content_type => /\Aimage\/.*\Z/
 
-  def self.from_omniauth(auth)
-    where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-      binding.pry
-      user.email = auth.info.email
-      user.password = Devise.friendly_token[0,20]
-      binding.pry
-      user.name = auth.info.name   # assuming the user model has a name
-      #user.image = auth.info.image # assuming the user model has an image
-    end
+  def twitter
+    identities.where( :provider => "twitter" ).first
   end
 
-  def self.new_with_session(params, session)
-    super.tap do |user|
-      if data = session["devise.instagram_data"] && session["devise.instagram_data"]["extra"]["raw_info"]
-        user.email = data["email"] if user.email.blank?
-      end
-    end
+  def twitter_client
+    @twitter_client ||= Twitter.client( access_token: twitter.accesstoken )
+  end
+
+  def instagram
+    identities.where( :provider => "instagram" ).first
+  end
+
+  def instagram_client
+    @instagram_client ||= Instagram.client( access_token: instagram.accesstoken )
   end
 
   def new_map(map_params)

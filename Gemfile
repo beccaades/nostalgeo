@@ -47,8 +47,14 @@ gem 'omniauth'
 
 gem 'omniauth-instagram'
 
+gem 'omniauth-twitter'
+
+gem 'twitter'
+
 # Geocode Latitude and Longitude
 gem 'geocoder'
+
+gem 'dotenv-rails', :groups => [:development, :test]
 
 # Use Unicorn as the app server
 # gem 'unicorn'
